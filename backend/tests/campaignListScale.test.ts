@@ -25,7 +25,10 @@ vi.mock('../src/services/sorobanRpc', () => ({
   }),
 }));
 
-const TEST_DB_PATH = path.join(os.tmpdir(), `stellar-goal-vault-list-scale-${process.pid}-${Date.now()}.db`);
+const TEST_DB_PATH = path.join(
+  os.tmpdir(),
+  `stellar-goal-vault-list-scale-${process.pid}-${Date.now()}.db`,
+);
 process.env.DB_PATH = TEST_DB_PATH;
 process.env.CONTRACT_ID = 'mock-contract';
 process.env.NODE_ENV = 'test';
@@ -52,9 +55,9 @@ afterAll(() => {
   } catch {}
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   clock = freezeClock();
-  const { getDb } = require('../src/services/db');
+  const { getDb } = await import('../src/services/db');
   const db = getDb();
   db.prepare('DELETE FROM campaign_events').run();
   db.prepare('DELETE FROM pledges').run();
@@ -97,7 +100,9 @@ describe('campaign list large-dataset regression', () => {
     const startedPaginate = Date.now();
     const totalPages = Math.ceil(CAMPAIGN_COUNT / PAGE_SIZE);
     for (let page = 1; page <= totalPages; page += 1) {
-      const res = await request(app).get(`/api/campaigns?page=${page}&limit=${PAGE_SIZE}`).expect(200);
+      const res = await request(app)
+        .get(`/api/campaigns?page=${page}&limit=${PAGE_SIZE}`)
+        .expect(200);
       expect(res.body.pagination.total).toBe(CAMPAIGN_COUNT);
       expect(res.body.pagination.totalPages).toBe(totalPages);
       expect(res.body.pagination.page).toBe(page);
@@ -110,7 +115,9 @@ describe('campaign list large-dataset regression', () => {
     expect(new Set(allIds).size).toBe(CAMPAIGN_COUNT);
 
     // Search/filter at scale
-    const searchRes = await request(app).get(`/api/campaigns?search=${encodeURIComponent('Scale campaign 42')}&page=1&limit=20`).expect(200);
+    const searchRes = await request(app)
+      .get(`/api/campaigns?search=${encodeURIComponent('Scale campaign 42')}&page=1&limit=20`)
+      .expect(200);
     expect(searchRes.body.data.length).toBeGreaterThan(0);
 
     const filterRes = await request(app)
